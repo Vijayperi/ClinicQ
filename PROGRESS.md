@@ -60,8 +60,8 @@ Branch: `claude/serene-ptolemy-jc4dmy` (restarted from `main` after PR #1 was me
 
 ### Known issues and open questions
 
-- **The Docker images were not built with `docker build` here.** In this cloud sandbox, containers can't reach the npm registry, and routing them through the sandbox proxy was blocked. See "Verified" above for what was checked instead. The CI `docker` job builds both images on GitHub; its first run on this PR is the real proof.
-- **CI hasn't run yet.** Its first run happens on this PR. The E2E job downloads Chromium with `npx playwright install --with-deps chromium`. Locally I used the sandbox's pre-installed Chromium through the optional `CHROMIUM_PATH` setting.
+- **The Docker images couldn't be built in the cloud sandbox,** because containers there can't reach the npm registry. The first CI run on PR #2 built both images successfully (`docker compose build`, job "Docker images build"). `docker compose up` with the built images hasn't been run end to end yet; see "Verified" above for the stack checked by hand.
+- **CI passed on its first run** (PR #2, commit `b25d647`): all three jobs (checks, E2E and Docker build) are green. In CI, the E2E job downloads Chromium with `npx playwright install --with-deps chromium`; locally I used the sandbox's pre-installed Chromium through the optional `CHROMIUM_PATH` setting.
 - **The 2-hour rule now lives in two places** (the API and the web app). If the rule changes, both must change. A refinement-friendly fix: have the API return a `canCancel` flag with each appointment.
 - **Seed data goes stale** after 7 days (unchanged from Session 1).
 - **Times show in the browser's time zone**, while seed slots are 09:00–12:00 UTC, so in India they appear as 14:30–17:30. A real clinic would store the clinic's time zone.
