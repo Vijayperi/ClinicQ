@@ -1,6 +1,6 @@
 # ClinicQ
 
-ClinicQ is a small clinic appointment booking app, built the way a production app would be. It is also the textbook for a hands-on code-literacy course (coming in `docs/course/`): each week reads one layer of this codebase.
+ClinicQ is a small clinic appointment booking app, built the way a production app would be. It is also the textbook for a hands-on code-literacy course: each week reads one layer of this codebase. **Start the course at [docs/course/README.md](docs/course/README.md).**
 
 Patients register, browse doctors, book a free time slot, see their appointments and cancel them. Admins see every appointment and its status.
 
@@ -26,7 +26,7 @@ Patients register, browse doctors, book a free time slot, see their appointments
 | `.prettierrc.json`         | Code formatting rules                                              |
 | `tsconfig.base.json`       | TypeScript settings shared by all apps                             |
 | `PROGRESS.md`              | Session log: what was built, decisions, versions, known issues     |
-| `docs/course`              | The course lessons (not written yet)                               |
+| `docs/course`              | The course: start at `docs/course/README.md`                       |
 
 ## Install the tools (once)
 
