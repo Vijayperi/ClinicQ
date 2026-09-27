@@ -28,3 +28,6 @@ Thumbs.db
 # Playwright
 test-results/
 playwright-report/
+
+# VitePress (course website)
+docs/.vitepress/cache/

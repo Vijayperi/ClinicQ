@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/api/package.json apps/api/
+COPY docs/package.json docs/
 RUN npm ci --workspace apps/web --include-workspace-root --ignore-scripts
 
 COPY apps/web apps/web
