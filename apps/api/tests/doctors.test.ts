@@ -31,7 +31,7 @@ describe('GET /api/doctors', () => {
 });
 
 describe('GET /api/doctors/:id/slots', () => {
-  it('returns only future slots that are not booked', async () => {
+  it('returns the doctor and only their future slots that are not booked', async () => {
     const doctor = await createDoctor();
     const { user: patient } = await createUser();
     await createSlot(doctor.id, hoursFromNow(-3)); // in the past
@@ -44,6 +44,11 @@ describe('GET /api/doctors/:id/slots', () => {
     const res = await request(app).get(`/api/doctors/${doctor.id}/slots`);
 
     expect(res.status).toBe(200);
+    expect(res.body.doctor).toEqual({
+      id: doctor.id,
+      name: 'Dr. Test',
+      specialty: 'General Practice',
+    });
     expect(res.body.slots.map((slot: { id: string }) => slot.id)).toEqual([
       freeSlot.id,
       reopenedSlot.id,

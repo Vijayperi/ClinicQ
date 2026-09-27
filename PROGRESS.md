@@ -4,6 +4,79 @@ Newest session first. Each entry records what was built, the decisions behind it
 
 ---
 
+## Session 2 — 2026-09-27 — Web app, Docker, CI and E2E test
+
+Branch: `claude/serene-ptolemy-jc4dmy` (restarted from `main` after PR #1 was merged)
+
+### What was built
+
+- **`apps/web`:** a React 19 + Vite + React Router single-page app.
+  - Pages: log in, register, doctors, a doctor's available times with a confirm-to-book bar, my appointments (upcoming, and past/cancelled, with a Cancel button), the admin view of all appointments with a status filter, and a 404 page.
+  - `AuthContext` holds the logged-in user. The token is saved in `localStorage`, so a page reload restores the session through `GET /api/auth/me`. An expired token logs the user out everywhere.
+  - `ProtectedRoute` sends logged-out users to login (and back again afterwards) and sends users with the wrong role to their own home page. Patients land on `/doctors`, admins on `/admin`.
+  - API client (`src/api/client.ts`): adds the token, sends and reads JSON, and turns API errors into an `ApiError` carrying the API's code and message. Network failures get a plain-language message.
+  - Loading, error (with "Try again") and empty states on every data page, through one `useApiData` hook.
+  - Clean, simple styling in one CSS file with colour variables; it works down to phone width, where the admin table scrolls sideways.
+  - 10 Vitest unit tests: the API client (token, errors, network failure, auto-logout on 401) and the cancel/upcoming checks, including the exact 2-hour boundary.
+- **API change (additive):** `GET /api/doctors/:id/slots` now returns `{ doctor, slots }` instead of `{ slots }`, so the booking page gets its heading without a second request. The test and API README were updated.
+- **Playwright E2E test** (`apps/web/e2e/booking.spec.ts`): log in as Alice → book Dr. Chloe Nguyen's first free time → see it in My appointments → cancel → see it marked Cancelled. Playwright starts its own API (port 3100) and web server (port 5174) against a separate `clinicq_e2e` database, which is migrated and reseeded before each run.
+- **Docker:** `apps/api/Dockerfile` (it runs `prisma migrate deploy` and then starts the server, as a non-root user); `apps/web/Dockerfile` (a two-stage build: Node builds the site, nginx serves it); `apps/web/nginx.conf` (serves the SPA and forwards `/api/` to the API); `docker-compose.yml` (db + api + web, with health checks); and `docker/db/init/01-create-databases.sql` (creates `clinicq_test` and `clinicq_e2e`). Also `.dockerignore`, and `.gitattributes` to force LF line endings for Windows users.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`), with three jobs: checks (lint, format check, typecheck, unit/API tests, build, against a Postgres service), e2e (Playwright, uploading its report on failure) and docker (`docker compose build`).
+- **README** rewritten with tool installs for Windows and Mac, and two ways to run the app: all in Docker, or Docker for the database only with the apps running locally. It also has PowerShell variants and troubleshooting. `apps/web/README.md` has the page table and folder map.
+- New root scripts: `dev:web`, `test:e2e`, `db:migrate`, `db:seed`, `docker:seed`.
+
+### Key decisions
+
+- **Declarative React Router** (`<BrowserRouter>` + `<Routes>`) rather than the data-router APIs, because it reads like a table of URLs and pages. React Router 8 still supports it.
+- **The browser only ever calls `/api/...` on its own origin.** Vite's dev proxy (development) and nginx (Docker) forward those calls to the API. This avoids CORS configuration differences between environments and needs no API URL setting in the web app.
+- **The token is kept in `localStorage`.** It's simple and common, but any script injected into the page could read it. The safer alternative (an httpOnly cookie) belongs in the Week 6 security discussion. Logout is client-side only.
+- **The web app repeats the 2-hour rule** (`utils/appointments.ts`), so it can hide the Cancel button. The API remains the source of truth, and the rule is duplicated in two places (see Known issues).
+- **The API Docker image is a single stage and keeps dev dependencies.** It needs the Prisma CLI to run migrations when it starts and `tsx` to run the seed. A slimmer multi-stage image is a later improvement.
+- **Docker Compose runs the API with `NODE_ENV=production`.** Seeding therefore has to override it: `npm run docker:seed` sets `NODE_ENV=development` for that one command, because the seed refuses to run in production.
+- **The E2E test uses its own database and ports** so it can't collide with a running dev setup, and it reseeds each time so it is repeatable.
+- **GitHub Actions pinned to the current majors:** `actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`.
+- The root `engines` field now requires Node ≥ 22.22.0, because React Router 8 declares that minimum.
+
+### Exact versions added this session
+
+| Package                                                 | Version                                                                                        |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| react / react-dom                                       | 19.3.0                                                                                         |
+| react-router                                            | 8.4.0                                                                                          |
+| vite                                                    | 8.3.1                                                                                          |
+| @vitejs/plugin-react                                    | 6.1.1                                                                                          |
+| @types/react / @types/react-dom                         | 19.3.0                                                                                         |
+| @playwright/test                                        | 1.63.0                                                                                         |
+| eslint-plugin-react-hooks / eslint-plugin-react-refresh | 7.1.1 / 0.5.7                                                                                  |
+| Docker base images                                      | `node:22-slim` (22.23.3 at time of writing), `nginx:1.30-alpine`, `postgres:16-alpine` (16.15) |
+
+### Verified in this session
+
+- `npm run lint`, `format:check`, `typecheck`, `npm test` (42 API + 10 web tests) and `npm run build` all pass.
+- `npm run test:e2e` passes, and passes again on a second run (so it is repeatable).
+- `docker compose config` is valid; `docker compose up db` starts and the init script creates all three databases; nginx accepts `nginx.conf` (`nginx -t`).
+- Each Dockerfile's install and build steps were replayed in a clean directory holding only the files that Dockerfile copies. Both succeed.
+- The production-style stack was run by hand: the compiled API with its container start command and `NODE_ENV=production` against the Compose database, and the real `nginx:1.30-alpine` image serving the built site and proxying `/api`. A scripted browser walkthrough on it passed: a protected page redirects to login; wrong password shows an error; register; new-patient empty state; book; a patient gets 403 from the admin API and is redirected away from `/admin`; admin sees all 4 appointments and the Cancelled filter shows 1; a reload keeps the session; the 404 page works; and the phone-width layout looks right.
+
+### Known issues and open questions
+
+- **The Docker images couldn't be built in the cloud sandbox,** because containers there can't reach the npm registry. The first CI run on PR #2 built both images successfully (`docker compose build`, job "Docker images build"). `docker compose up` with the built images hasn't been run end to end yet; see "Verified" above for the stack checked by hand.
+- **CI passed on its first run** (PR #2, commit `b25d647`): all three jobs (checks, E2E and Docker build) are green. In CI, the E2E job downloads Chromium with `npx playwright install --with-deps chromium`; locally I used the sandbox's pre-installed Chromium through the optional `CHROMIUM_PATH` setting.
+- **The 2-hour rule now lives in two places** (the API and the web app). If the rule changes, both must change. A refinement-friendly fix: have the API return a `canCancel` flag with each appointment.
+- **Seed data goes stale** after 7 days (unchanged from Session 1).
+- **Times show in the browser's time zone**, while seed slots are 09:00–12:00 UTC, so in India they appear as 14:30–17:30. A real clinic would store the clinic's time zone.
+- **Refinement questions from Session 1 are still open:** can admins cancel? Can a patient hold overlapping appointments? Should cancelling someone else's appointment return 403 or 404?
+
+### Learner notes
+
+None given for this session.
+
+### Next session
+
+Session 3: write the course home (`docs/course/README.md`) and Week 0 (setup and tour) and Week 1 (the big picture), following the lesson structure in CLAUDE.md and linking to the files built in Sessions 1–2.
+
+---
+
 ## Session 1 — 2026-09-27 — Monorepo root and backend API
 
 Branch: `claude/serene-ptolemy-jc4dmy`

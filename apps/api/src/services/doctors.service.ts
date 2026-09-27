@@ -8,14 +8,17 @@ export async function listDoctors() {
   });
 }
 
-// Slots that are in the future and don't have an active booking.
-export async function listAvailableSlots(doctorId: string, now = new Date()) {
-  const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
+// The doctor plus their slots that are in the future and don't have an active booking.
+export async function getDoctorWithAvailableSlots(doctorId: string, now = new Date()) {
+  const doctor = await prisma.doctor.findUnique({
+    where: { id: doctorId },
+    select: { id: true, name: true, specialty: true },
+  });
   if (!doctor) {
     throw new HttpError(404, 'DOCTOR_NOT_FOUND', 'Doctor not found');
   }
 
-  return prisma.timeSlot.findMany({
+  const slots = await prisma.timeSlot.findMany({
     where: {
       doctorId,
       startsAt: { gt: now },
@@ -24,4 +27,6 @@ export async function listAvailableSlots(doctorId: string, now = new Date()) {
     select: { id: true, startsAt: true, endsAt: true },
     orderBy: { startsAt: 'asc' },
   });
+
+  return { doctor, slots };
 }
