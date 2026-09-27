@@ -4,6 +4,62 @@ Newest session first. Each entry records what was built, the decisions behind it
 
 ---
 
+## Session 3 — 2026-09-27 — Course home and Week 0
+
+Branch: `claude/serene-ptolemy-jc4dmy` (restarted from `main` after PR #2 was merged)
+
+### What was written
+
+- **`docs/course/README.md`, the course home:**
+  - how to use the course: pace for 4–6 hours a week, the eight-part lesson structure, "master" vs "skim" labels, how to follow links, and a questions log;
+  - an architecture overview with two Mermaid diagrams: a sequence diagram of one booking request (browser → React page → API client → Express → middleware → controller → service → Prisma → PostgreSQL and back, with the 409 double-booking path) and a container diagram of the Docker setup;
+  - a folder map with a one-line description of every tracked file;
+  - the curriculum (Weeks 0–10);
+  - a "How to build with AI" guide covering the loop (spec → small prompt → read the diff → test → commit), a spec template, a four-part prompt pattern, a diff-review checklist, and when to distrust AI output. The distrust section uses real examples from this repo's own history: the Prisma RC on npm's `latest` tag, TypeScript 7 vs typescript-eslint, the unformatted test in Session 2, the inaccurate auto-generated PR #1 description, and Prisma refusing an AI-initiated database reset.
+- **`docs/course/week-00.md`, Week 0 (setup and tour):**
+  - step-by-step Mac setup: Terminal basics, Homebrew and Git, git config, the GitHub CLI and login, Node 22, Docker Desktop, VS Code with the `code` command, and an optional AI assistant;
+  - cloning, then running ClinicQ both ways (all in Docker, or local development);
+  - a 12-step guided tour mapped to the features and business rules;
+  - running all the tests, and the everyday Git commands;
+  - the reading path (8 files), a block-by-block walkthrough of `docker-compose.yml`, the PA lens, a Build with AI exercise (add a neurologist to the seed data), 15 vocabulary terms and a 5-question quiz.
+- **`.vscode/extensions.json`:** VS Code now recommends ESLint, Prettier, Prisma, Markdown Mermaid preview and Playwright when the repo is opened. Week 0's setup relies on it.
+- **Root README:** now points to the course home.
+
+### Key decisions
+
+- **Week 0 is Mac-only**, as requested. Windows setup lives in the root README, which Week 0 links to for troubleshooting.
+- **Setup path chosen for fewest moving parts:** Homebrew (which brings Git via the Command Line Tools) and the GitHub CLI for login and cloning; Node from the nodejs.org installer, with nvm mentioned as a "skim" alternative; Docker Desktop and VS Code from their own websites. I avoided exact Homebrew cask names and the nvm install script version, because I couldn't verify them from here.
+- **Week 0 teaches both ways of running the app.** Option A (everything in Docker) is for clicking around; Option B (local development) is for reading and changing code. Option B is the setup later weeks assume.
+- **Extra sections in Week 0:** besides the eight standard parts, Week 0 has hands-on sections (setup, run, tour, tests, Git) placed between the concept primer and the reading path. The standard parts keep their order.
+- **Tables are used only for the folder map and the vocabulary,** per CLAUDE.md's teaching rules. Ports and sample accounts are lists.
+- **Later weeks are listed as "coming soon" without links,** so the course home has no broken links.
+
+### Verified in this session
+
+- All four Mermaid diagrams render without errors in Chromium, using the latest Mermaid release (the version GitHub runs may differ). I checked the rendered images; the step numbers the text cites (13–14) match the drawn diagram.
+- All 18 relative links in both documents resolve to existing files; of the 6 external links, nodejs.org, docker.com and the Claude Code docs responded; brew.sh, code.visualstudio.com and the nvm GitHub page couldn't be reached from this sandbox (its network policy blocks them), so those three are unchecked.
+- The folder map covers every tracked file (checked by script; only the timestamped migration SQL is covered by its folder's row).
+- Every line of YAML quoted in Week 0's walkthrough exists verbatim in `docker-compose.yml`.
+- A dry run of the Build with AI exercise printed exactly the output the lesson predicts: `Seeded 5 doctors, 210 slots, 3 users and 3 appointments.` The change was reverted afterwards.
+- `npm run format:check` passes.
+
+### Known issues and open questions
+
+- **The Mac setup steps were written, not performed.** This cloud environment is Linux, so the Homebrew, Docker Desktop, VS Code and `gh auth login` steps are untested here. If a step doesn't match what you see, note it in your learner notes and I'll fix the lesson.
+- **`docker compose up` with the built images still hasn't been run end to end** (carried over from Session 2). Week 0's Option A is that run.
+- **External setup commands can change.** The Homebrew one-liner is quoted "at the time of writing"; the lesson tells you to copy it from brew.sh.
+- All earlier known issues and refinement questions still stand (Sessions 1–2).
+
+### Learner notes
+
+None given for this session.
+
+### Next session
+
+Session 4: Week 1 (the big picture: client/server, HTTP, URLs, JSON, APIs, the request lifecycle, README, `package.json`, `.env` and the folder map) and Week 2 (TypeScript as it appears in ClinicQ).
+
+---
+
 ## Session 2 — 2026-09-27 — Web app, Docker, CI and E2E test
 
 Branch: `claude/serene-ptolemy-jc4dmy` (restarted from `main` after PR #1 was merged)
