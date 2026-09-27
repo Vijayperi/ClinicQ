@@ -10,6 +10,7 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/prisma.config.ts apps/api/
 COPY apps/api/prisma apps/api/prisma
 COPY apps/web/package.json apps/web/
+COPY docs/package.json docs/
 RUN npm ci --workspace apps/api --include-workspace-root
 
 COPY apps/api apps/api
