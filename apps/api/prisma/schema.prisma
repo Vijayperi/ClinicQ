@@ -1,0 +1,68 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+  previewFeatures     = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PATIENT
+  ADMIN
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CANCELLED
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         Role          @default(PATIENT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+}
+
+model Doctor {
+  id        String     @id @default(uuid())
+  name      String
+  specialty String
+  createdAt DateTime   @default(now())
+  slots     TimeSlot[]
+}
+
+model TimeSlot {
+  id           String        @id @default(uuid())
+  doctorId     String
+  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  startsAt     DateTime
+  endsAt       DateTime
+  appointments Appointment[]
+
+  // A doctor can't have two slots starting at the same time.
+  @@unique([doctorId, startsAt])
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  patientId   String
+  patient     User              @relation(fields: [patientId], references: [id])
+  slotId      String
+  slot        TimeSlot          @relation(fields: [slotId], references: [id])
+  status      AppointmentStatus @default(BOOKED)
+  createdAt   DateTime          @default(now())
+  cancelledAt DateTime?
+
+  // Business rule: a slot can't be double-booked.
+  // Only one BOOKED appointment per slot; cancelled ones don't count.
+  @@unique([slotId], where: { status: "BOOKED" }, map: "Appointment_slotId_booked_key")
+  @@index([patientId])
+}
