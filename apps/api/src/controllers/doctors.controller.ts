@@ -7,6 +7,6 @@ export async function listDoctors(_req: Request, res: Response) {
 }
 
 export async function listAvailableSlots(req: Request<{ id: string }>, res: Response) {
-  const slots = await doctorsService.listAvailableSlots(req.params.id);
-  res.json({ slots });
+  const { doctor, slots } = await doctorsService.getDoctorWithAvailableSlots(req.params.id);
+  res.json({ doctor, slots });
 }

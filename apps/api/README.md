@@ -39,7 +39,7 @@ Authenticated routes need the header `Authorization: Bearer <token>` (the token 
 | POST   | `/api/auth/login`              | anyone    | Log in; returns a token                    |
 | GET    | `/api/auth/me`                 | logged in | The current user                           |
 | GET    | `/api/doctors`                 | anyone    | Doctors with specialties                   |
-| GET    | `/api/doctors/:id/slots`       | anyone    | A doctor's future, unbooked slots          |
+| GET    | `/api/doctors/:id/slots`       | anyone    | A doctor and their future, unbooked slots  |
 | GET    | `/api/appointments`            | patient   | My appointments                            |
 | POST   | `/api/appointments`            | patient   | Book: body `{ "slotId": "..." }`           |
 | POST   | `/api/appointments/:id/cancel` | patient   | Cancel one of my appointments              |
