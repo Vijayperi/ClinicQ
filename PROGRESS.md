@@ -4,6 +4,116 @@ Newest session first. Each entry records what was built, the decisions behind it
 
 ---
 
+## Session 4 — 2026-09-27 — Weeks 1–10, capstone and the course website
+
+Branch: `claude/serene-ptolemy-jc4dmy` (same branch and PR as Session 3; PR #3 was still open)
+
+### What was built
+
+- **All remaining lessons**, each with the eight standard parts:
+  - Week 1: The big picture.
+  - Week 2: TypeScript in ClinicQ.
+  - Week 3: Backend I.
+  - Week 4: Backend II.
+  - Week 5: Database.
+  - Week 6: Auth and security, including healthcare and PHI.
+  - Week 7: Frontend I.
+  - Week 8: Frontend II.
+  - Week 9: Quality, with a PR review checklist.
+  - Week 10: Shipping, plus the full capstone.
+- **Hands-on sections** in every lesson: `curl`, `psql`, DevTools and deliberate break-and-restore exercises.
+- **The capstone** ("Patients can reschedule an appointment") is in Week 10. It walks through the PBI (with a collapsed reference set of ACs to compare against), predicting the files, step-by-step prompts on a feature branch, a capstone-specific PR review checklist, UAT and fix-by-prompting, and a retrospective template focused on what the AI got wrong and why.
+- **Build with AI** exercises ramp up in difficulty:
+  - Week 1: health-check time.
+  - Week 2: a time-range formatter with a test.
+  - Week 3: `GET /api/doctors/:id`.
+  - Week 4: a three-upcoming-appointments limit.
+  - Week 5: an optional "reason" column with a migration.
+  - Week 6: admin cancellation.
+  - Week 7: a specialty filter.
+  - Week 8: field-level form errors.
+  - Week 9: an admin E2E test through a real PR.
+  - Week 10: the capstone.
+- **The course website** (`docs/`, a new npm workspace), built with VitePress:
+  - sidebar, local search, previous/next, dark mode;
+  - Mermaid diagrams drawn in the browser;
+  - links to code rewritten to GitHub;
+  - "suggest a fix" links;
+  - ClinicQ's colours.
+
+  Run it with `npm run dev:docs` (port 5180).
+
+- **`.github/workflows/docs.yml`** publishes the site to GitHub Pages on every push to `main`, after checking the lessons.
+- **`docs/scripts/check-lessons.mjs`**: every line of code a lesson quotes (ts, tsx, prisma, yaml, sql, css, json, dockerfile, nginx) must exist in the repo, and every relative link must resolve. It runs as the docs workspace's `test`, so it's part of `npm test` and CI. Lessons mark illustrative (non-quoted) blocks with `<!-- example -->`.
+- **Course home:** curriculum links to all weeks; "three ways to read it" (website, GitHub, VS Code); the folder map covers the new files. The booking sequence diagram was simplified to 7 participants, with a file list under it, so it's readable on both GitHub and the site.
+- **Root README:** a "Read the course" section, including how to switch on GitHub Pages.
+- **Docker:** both Dockerfiles copy `docs/package.json`, and `.dockerignore` lets that one file through. `npm ci` needs every workspace's `package.json` to match the lockfile.
+
+### Key decisions
+
+- **VitePress 1.6.4** (its latest stable; 2.0 is still alpha). It renders the Markdown lessons as they are: no front matter to add, links between lessons keep working, and search is built in. The same files therefore read well on GitHub, in VS Code and on the site. Astro Starlight was considered, but it needs a `title` in front matter on every file and a different folder layout.
+- **Mermaid 12.0.0**, drawn in the browser by a small Vue component, rather than a third-party VitePress plugin whose compatibility couldn't be verified. Sequence diagrams use compact spacing and a 720px minimum width, so their text stays readable, and they scroll sideways on narrow screens.
+- **Relative links to code** (`../../apps/...`) stay in the Markdown, so they work on GitHub and in VS Code. The website rewrites them to `github.com/Vijayperi/ClinicQ/blob/main/...` at build time.
+- **Inline code is marked `v-pre`** in the website, so JSX like `state={{ … }}` and GitHub syntax like `${{ … }}` display literally instead of being run as Vue templates.
+- **All ten weeks, not just five,** because the user asked to finish the whole plan in one go.
+- **Week 9's checklist heading is unnumbered**, so its link anchor is the same on GitHub and on the site.
+
+### Exact versions added
+
+- `vitepress` 1.6.4, which brings its own Vite 5.4.21.
+- `mermaid` 12.0.0.
+- `vue` 3.5.43.
+- GitHub Actions: `actions/configure-pages@v6`, `actions/upload-pages-artifact@v5`, `actions/deploy-pages@v5` (the latest major tags when written).
+
+### Verified in this session
+
+- `npm run lint`, `format:check`, `typecheck`, `npm test` (42 API + 10 web tests, plus the lesson check), `npm run build` (API, web and website) and `npm run test:e2e` all pass.
+- **The lesson check catches drift.** Changing a quoted line of code (the `/health` response) made it fail on the right lesson; restoring it made it pass.
+- **The website** was built exactly as GitHub Pages will serve it (base path `/ClinicQ/`) and checked in Chromium:
+  - all 12 pages load, and all 18 diagrams render with no errors, in light and dark mode;
+  - there are no browser console errors, and no links left pointing at `../`;
+  - the code links point to GitHub, and lesson-to-lesson links resolve;
+  - search for "partial unique index" returns 16 results, and a result opens the right section;
+  - the layout works at phone width.
+- **Claims in the lessons, checked by running them:**
+  - The Week 1 `curl` status codes: 200 health, 400 bad ID, 401 no token, 403 wrong role, 404 unknown route, 400 broken JSON.
+  - Week 4's validation `details` output.
+  - Week 5's SQL exercises: the direct `INSERT` is rejected by `Appointment_slotId_booked_key`; deleting a doctor with appointment history fails on `Appointment_slotId_fkey`. The `npm run db:migrate --workspace apps/api -- --name …` form passes the name through to Prisma.
+  - Week 6: decoding the token payload shows `sub`, `role`, `iat` and `exp`, with a 3600-second lifetime; the forged-role token gets `401 INVALID_TOKEN`; the stored hashes all start with `$2b$10$`.
+  - Week 3: removing the role guard makes "do not let admins book appointments" fail.
+  - Week 9: removing the ownership check makes the "someone else's appointment" test fail with "expected 200 to be 403".
+- **Test counts in Week 9** were taken from the actual test run: 7 + 10 unit, 35 API, 1 E2E.
+- **Both Dockerfiles'** install and build steps, including the new `docs/package.json` copy, were replayed in clean directories and succeed.
+
+### Known issues and open questions
+
+- **GitHub Pages must be switched on once** in the repo settings: Settings → Pages → Source: **GitHub Actions**. Until then, the "Course website" workflow will fail on its publish step after merges to `main`. Also, GitHub Pages for a **private** repository requires a paid GitHub plan; on a free plan the repo would need to be public, or the site can be read locally with `npm run dev:docs`.
+- **The Build with AI exercises are not pre-built**, on purpose: they are Vijay's to do. Only Week 0's was dry-run, and its predicted output matched. The lessons point out where later exercises interact: Week 9's admin E2E test must cope with `booking.spec.ts` adding an appointment, and the capstone interacts with Week 4's limit if it was built.
+- **`npm audit` findings grew** to 12 (10 high, 2 moderate). All are in development-only tooling:
+  - the Prisma CLI, as before;
+  - VitePress's bundled Vite 5 / esbuild 0.21, and `lodash-es` via Mermaid (both new).
+
+  The published website is static HTML, CSS and JS, so none of this runs in the app or on the site. Upgrading VitePress to 2.x (alpha today) should clear the Vite/esbuild ones once it's stable.
+
+- **Mac steps are still untested on a real Mac** (Session 3). The website's own diagrams render with Mermaid 12; GitHub's renderer uses its own Mermaid version, which may lay diagrams out slightly differently.
+- **`docker compose up` with the built images** still hasn't been run end to end (CI builds the images; Week 0/10's hands-on is the first full run).
+- **Refinement questions from Sessions 1–2** are now written into lessons as decisions for Vijay to make: admin cancellation (Week 6's exercise), overlapping appointments, and 403 vs 404.
+
+### Learner notes
+
+Vijay asked to stop working session by session and finish the whole plan in one go: all course documents (at least five weeks) readable as a functional website.
+
+### Next session
+
+No more build sessions are planned. The course is complete: start at Week 0. Useful follow-ups when needed:
+
+- fix anything Vijay's learner notes find on a real Mac;
+- enable GitHub Pages;
+- upgrade VitePress when 2.x is stable;
+- review Vijay's capstone PR and retrospective.
+
+---
+
 ## Session 3 — 2026-09-27 — Course home and Week 0
 
 Branch: `claude/serene-ptolemy-jc4dmy` (restarted from `main` after PR #2 was merged)
