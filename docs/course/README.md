@@ -41,7 +41,13 @@ Do the weeks in order: each one assumes the earlier ones.
 - **Master** means you should be able to explain it to a colleague without notes. It comes up every week and in every PR.
 - **Skim** means know that it exists and roughly what it's for. Developers look these things up too.
 
-**Following links.** File links are relative. They work on GitHub, and in VS Code's Markdown preview (open it with `Cmd+Shift+V` on Mac, `Ctrl+Shift+V` on Windows). In VS Code you can also `Cmd+click` (Mac) or `Ctrl+click` (Windows) a link to open the file.
+**Three ways to read it.**
+
+- **As a website** (recommended): run `npm run dev:docs` from the repo root and open `http://localhost:5180`. You get a sidebar, search, diagrams, and previous/next buttons. Once GitHub Pages is switched on for the repo, the same site is published online on every merge to `main`.
+- **On GitHub**: open `docs/course/` in the repository. Diagrams render, and links to code open the file.
+- **In VS Code**: open a lesson and press `Cmd+Shift+V` (Mac) or `Ctrl+Shift+V` (Windows) for the preview. `Cmd+click` or `Ctrl+click` a link to open the file next to the lesson.
+
+Links to code files use relative paths. On the website they open the file on GitHub; in VS Code and on GitHub they open it directly.
 
 **Keep a questions log.** When something doesn't make sense, write down the file, the line and your question. Many of them will be answered a week or two later. The rest are good questions to take to your developers.
 
@@ -63,49 +69,51 @@ Here is one request from start to finish: a patient clicks **Confirm booking**.
 sequenceDiagram
     autonumber
     actor Patient
-    participant Page as React page<br/>BookAppointmentPage.tsx
-    participant Client as API client<br/>api/client.ts
-    participant Express as Express app<br/>app.ts + routes
-    participant MW as Middleware<br/>authenticate, requireRole, validate
-    participant Ctrl as Controller<br/>appointments.controller.ts
-    participant Svc as Service<br/>appointments.service.ts
-    participant Prisma as Prisma Client
-    participant DB as PostgreSQL
+    participant Page as React page
+    participant Client as API client
+    participant MW as Express +<br/>middleware
+    participant Ctrl as Controller
+    participant Svc as Service
+    participant DB as Prisma +<br/>PostgreSQL
 
-    Patient->>Page: clicks "Confirm booking"
+    Patient->>Page: clicks Confirm booking
     Page->>Client: bookAppointment(slotId)
-    Client->>Express: POST /api/appointments<br/>Authorization: Bearer token<br/>body {"slotId": "..."}
-    Express->>MW: route matched
-    MW->>MW: token valid? role is PATIENT? body valid?
-    MW->>Ctrl: request passes all checks
-    Ctrl->>Svc: bookAppointment(patientId, slotId)
-    Svc->>Prisma: find the slot
-    Prisma->>DB: SELECT from TimeSlot
-    DB-->>Prisma: slot row
-    Svc->>Svc: business rule: slot is not in the past
-    Svc->>Prisma: create the appointment
-    Prisma->>DB: INSERT into Appointment
+    Client->>MW: POST /api/appointments<br/>token + {slotId}
+    MW->>MW: logged in? patient?<br/>body valid?
+    MW->>Ctrl: request passes
+    Ctrl->>Svc: bookAppointment(...)
+    Svc->>DB: find the slot
+    DB-->>Svc: slot
+    Svc->>Svc: rule: not in the past
+    Svc->>DB: INSERT appointment
     alt slot already booked
-        DB-->>Prisma: unique index violation
-        Prisma-->>Svc: error P2002
-        Svc-->>Express: HttpError 409 SLOT_ALREADY_BOOKED
-        Express-->>Client: 409 with error JSON
+        DB-->>Svc: unique index violation
+        Svc-->>MW: HttpError 409
+        MW-->>Client: 409 SLOT_ALREADY_BOOKED
         Client-->>Page: throws ApiError
-        Page-->>Patient: shows "This time slot is already booked"
+        Page-->>Patient: "already booked"
     else slot is free
-        DB-->>Prisma: new row
-        Prisma-->>Svc: appointment object
+        DB-->>Svc: new row
         Svc-->>Ctrl: appointment
-        Ctrl-->>Client: 201 Created with appointment JSON
+        Ctrl-->>Client: 201 Created + JSON
         Client-->>Page: appointment
-        Page-->>Patient: goes to My appointments, "Your appointment is booked."
+        Page-->>Patient: My appointments,<br/>"booked" message
     end
 ```
+
+The boxes are these files:
+
+- **React page**: [`BookAppointmentPage.tsx`](../../apps/web/src/pages/BookAppointmentPage.tsx)
+- **API client**: [`api/client.ts`](../../apps/web/src/api/client.ts)
+- **Express + middleware**: [`app.ts`](../../apps/api/src/app.ts), the routes, and `authenticate`, `requireRole` and `validate` in [`middleware/`](../../apps/api/src/middleware/). Errors are turned into responses by [`errorHandler.ts`](../../apps/api/src/middleware/errorHandler.ts).
+- **Controller**: [`appointments.controller.ts`](../../apps/api/src/controllers/appointments.controller.ts)
+- **Service**: [`appointments.service.ts`](../../apps/api/src/services/appointments.service.ts)
+- **Prisma + PostgreSQL**: [`lib/prisma.ts`](../../apps/api/src/lib/prisma.ts) and [`schema.prisma`](../../apps/api/prisma/schema.prisma)
 
 Some things to notice:
 
 - Each box does one job. The **middleware** decides whether the request may go any further. The **controller** translates between HTTP and plain function calls. The **service** holds the business rules. **Prisma** turns function calls into SQL. This split is called a _layered architecture_, and Weeks 3–5 cover it.
-- The double-booking rule is enforced by the **database** (steps 13–14), not by an "is it free?" check in code. That's the only way to be sure when two patients click at the same moment. Week 5 explains why.
+- The double-booking rule is enforced by the **database** (steps 10–11), not by an "is it free?" check in code. That's the only way to be sure when two patients click at the same moment. Week 5 explains why.
 - Errors travel back up the same path. Whatever goes wrong, the patient sees a readable message, because every layer knows how to pass an error along.
 - In development, Vite's dev server sits between the browser and the API and forwards `/api` calls. In Docker, nginx does the same job. Neither changes the request, so they're left out of the diagram.
 
@@ -147,6 +155,12 @@ Every file in the repository, in one line each. You don't need to read them all 
 | `.vscode/extensions.json`                | The VS Code extensions this project recommends; VS Code offers to install them              |
 | `docs/course/README.md`                  | This page: the course home                                                                  |
 | `docs/course/week-NN.md`                 | One lesson per week                                                                         |
+| `docs/course/public/favicon.svg`         | The course website's browser-tab icon                                                       |
+| `docs/package.json`                      | The course website's tools (VitePress, Mermaid) and scripts (`dev`, `build`, `check`)       |
+| `docs/.vitepress/config.ts`              | Website settings: sidebar, search, diagrams, and links to code rewritten to GitHub          |
+| `docs/.vitepress/theme/`                 | Website theme: ClinicQ colours and the component that draws Mermaid diagrams                |
+| `docs/scripts/check-lessons.mjs`         | Fails CI if a lesson quotes code that no longer exists, or has a broken link                |
+| `.github/workflows/docs.yml`             | Publishes the course website to GitHub Pages on every merge to `main`                       |
 
 ### API: configuration and database (`apps/api`)
 
@@ -259,16 +273,16 @@ Every file in the repository, in one line each. You don't need to read them all 
 ## Curriculum
 
 - **[Week 0: Setup and tour](week-00.md).** Install VS Code, Git, Node and Docker on your Mac; clone ClinicQ, run it and click through every feature; run the tests.
-- **Week 1: The big picture** _(coming soon)_. Client and server, HTTP, URLs, JSON and APIs; the life of a request; README, `package.json`, `.env` and the folder map.
-- **Week 2: TypeScript as it appears in ClinicQ** _(coming soon)_. Types and interfaces, functions and arrow functions, objects and arrays, imports and exports, `async`/`await` and promises.
-- **Week 3: Backend I** _(coming soon)_. Express setup, routes, controllers, middleware and HTTP status codes.
-- **Week 4: Backend II** _(coming soon)_. Services and business rules, Zod validation, error handling and logging.
-- **Week 5: Database** _(coming soon)_. The Prisma schema, relations, migrations, the seed, queries and transactions; how acceptance criteria become database constraints.
-- **Week 6: Auth and security** _(coming soon)_. Password hashing, JWTs, roles and authorization, CORS and secrets; healthcare and PHI considerations.
-- **Week 7: Frontend I** _(coming soon)_. React components, JSX, props, state and hooks.
-- **Week 8: Frontend II** _(coming soon)_. Routing, forms, calling the API, loading/error/empty states and the auth context.
-- **Week 9: Quality** _(coming soon)_. Unit, API and E2E tests; linting; Git branches, commits and PRs; code review; CI.
-- **Week 10: Shipping and capstone** _(coming soon)_. Docker, environments and deployment concepts; the capstone: you write the PBI for "Patients can reschedule an appointment", have AI build it, review it and run a retrospective.
+- **[Week 1: The big picture](week-01.md).** Client and server, HTTP, URLs, JSON and APIs; the life of a request; README, `package.json`, `.env` and the folder map.
+- **[Week 2: TypeScript as it appears in ClinicQ](week-02.md).** Types and interfaces, functions and arrow functions, objects and arrays, imports and exports, `async`/`await` and promises.
+- **[Week 3: Backend I](week-03.md).** Express setup, routes, controllers, middleware and HTTP status codes.
+- **[Week 4: Backend II](week-04.md).** Services and business rules, Zod validation, error handling and logging.
+- **[Week 5: Database](week-05.md).** The Prisma schema, relations, migrations, the seed, queries and transactions; how acceptance criteria become database constraints.
+- **[Week 6: Auth and security](week-06.md).** Password hashing, JWTs, roles and authorization, CORS and secrets; healthcare and PHI considerations.
+- **[Week 7: Frontend I](week-07.md).** React components, JSX, props, state and hooks.
+- **[Week 8: Frontend II](week-08.md).** Routing, forms, calling the API, loading/error/empty states and the auth context.
+- **[Week 9: Quality](week-09.md).** Unit, API and E2E tests; linting; Git branches, commits and PRs; code review; CI.
+- **[Week 10: Shipping and capstone](week-10.md).** Docker, environments and deployment concepts; the capstone: you write the PBI for "Patients can reschedule an appointment", have AI build it, review it and run a retrospective.
 
 ## How to build with AI
 

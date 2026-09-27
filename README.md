@@ -13,20 +13,33 @@ Patients register, browse doctors, book a free time slot, see their appointments
 
 ## Repository layout
 
-| Path                       | What it is                                                         |
-| -------------------------- | ------------------------------------------------------------------ |
-| `apps/api`                 | Backend: Node.js + Express + Prisma (PostgreSQL). See its README.  |
-| `apps/web`                 | Frontend: React + Vite + React Router. See its README.             |
-| `apps/web/e2e`             | The Playwright end-to-end test                                     |
-| `docker-compose.yml`       | Runs the database, API and web app together in Docker              |
-| `docker/db/init`           | SQL that creates the test databases the first time Postgres starts |
-| `.github/workflows/ci.yml` | GitHub Actions: lint, typecheck, tests, build, E2E, Docker build   |
-| `package.json`             | npm workspaces root; scripts that run across every app             |
-| `eslint.config.js`         | Lint rules shared by all apps                                      |
-| `.prettierrc.json`         | Code formatting rules                                              |
-| `tsconfig.base.json`       | TypeScript settings shared by all apps                             |
-| `PROGRESS.md`              | Session log: what was built, decisions, versions, known issues     |
-| `docs/course`              | The course: start at `docs/course/README.md`                       |
+| Path                         | What it is                                                         |
+| ---------------------------- | ------------------------------------------------------------------ |
+| `apps/api`                   | Backend: Node.js + Express + Prisma (PostgreSQL). See its README.  |
+| `apps/web`                   | Frontend: React + Vite + React Router. See its README.             |
+| `apps/web/e2e`               | The Playwright end-to-end test                                     |
+| `docker-compose.yml`         | Runs the database, API and web app together in Docker              |
+| `docker/db/init`             | SQL that creates the test databases the first time Postgres starts |
+| `.github/workflows/ci.yml`   | GitHub Actions: lint, typecheck, tests, build, E2E, Docker build   |
+| `.github/workflows/docs.yml` | GitHub Actions: publishes the course website to GitHub Pages       |
+| `package.json`               | npm workspaces root; scripts that run across every app             |
+| `eslint.config.js`           | Lint rules shared by all apps                                      |
+| `.prettierrc.json`           | Code formatting rules                                              |
+| `tsconfig.base.json`         | TypeScript settings shared by all apps                             |
+| `PROGRESS.md`                | Session log: what was built, decisions, versions, known issues     |
+| `docs/course`                | The course lessons (Markdown): start at `docs/course/README.md`    |
+| `docs/.vitepress`            | The course website (VitePress) built from those lessons            |
+
+## Read the course
+
+The course lives in [`docs/course/`](docs/course/README.md) and reads fine on GitHub. For the best experience (sidebar, search, diagrams, previous/next), run it as a website:
+
+```bash
+npm install
+npm run dev:docs      # course website on http://localhost:5180
+```
+
+To publish it online, switch on GitHub Pages once: repository **Settings → Pages → Build and deployment → Source: GitHub Actions**. After that, every merge to `main` publishes the site at `https://<your-github-username>.github.io/ClinicQ/` (the **Course website** workflow in the Actions tab shows the exact URL).
 
 ## Install the tools (once)
 
@@ -143,12 +156,12 @@ The seed creates slots for the 7 days after the day you run it. Run it again to 
 ## Everyday commands (run from the repo root)
 
 ```bash
-npm test               # API and web unit tests (needs the database running)
+npm test               # API and web tests, plus the lesson checks (needs the database running)
 npm run test:e2e       # the browser test: log in → book → view → cancel
 npm run lint           # check code for common mistakes
 npm run format         # auto-format all files
 npm run typecheck      # check TypeScript types without building
-npm run build          # compile the API and build the web app
+npm run build          # compile the API, build the web app and the course website
 ```
 
 The first time you run `npm run test:e2e`, download the browser it uses:

@@ -554,4 +554,4 @@ Then decide: keep it (`git add -A` and `git commit -m "feat(api): add a neurolog
 
 ---
 
-Next: **Week 1: The big picture** _(coming soon)_. Client and server, HTTP, JSON, and the life of the request you just watched in the Network tab.
+Next: [Week 1: The big picture](week-01.md). Client and server, HTTP, JSON, and the life of the request you just watched in the Network tab.
