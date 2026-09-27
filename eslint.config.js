@@ -15,6 +15,7 @@ export default defineConfig(
       '**/playwright-report/**',
       '**/test-results/**',
       'apps/api/src/generated/**',
+      'docs/.vitepress/cache/**',
     ],
   },
   js.configs.recommended,

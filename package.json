@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Clinic appointment booking app and code-literacy course",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "docs"
   ],
   "engines": {
     "node": ">=22.22.0"
@@ -13,6 +14,7 @@
   "scripts": {
     "dev:api": "npm run dev --workspace apps/api",
     "dev:web": "npm run dev --workspace apps/web",
+    "dev:docs": "npm run dev --workspace docs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -22,7 +24,8 @@
     "build": "npm run build --workspaces --if-present",
     "db:migrate": "npm run db:migrate --workspace apps/api",
     "db:seed": "npm run db:seed --workspace apps/api",
-    "docker:seed": "docker compose exec -e NODE_ENV=development api npm run db:seed"
+    "docker:seed": "docker compose exec -e NODE_ENV=development api npm run db:seed",
+    "docs:build": "npm run build --workspace docs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
