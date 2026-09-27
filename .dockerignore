@@ -1,0 +1,11 @@
+# Keep the Docker build context small and free of local-only files.
+**/node_modules
+**/dist
+**/.env
+**/coverage
+**/playwright-report
+**/test-results
+apps/api/src/generated
+.git
+.github
+docs

@@ -1,0 +1,64 @@
+# Runs the whole app: PostgreSQL, the API and the web app.
+#   docker compose up --build        then open http://localhost:8080
+# Or just the database, for local development:
+#   docker compose up -d db
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: clinicq
+      POSTGRES_PASSWORD: clinicq
+      POSTGRES_DB: clinicq
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U clinicq -d clinicq']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://clinicq:clinicq@db:5432/clinicq
+      # Fine for local use only. Real environments get this from a secret store.
+      JWT_SECRET: ${JWT_SECRET:-local-docker-secret-change-me-0123456789abcdef}
+      JWT_EXPIRES_IN: 1h
+      CORS_ORIGIN: http://localhost:8080
+      LOG_LEVEL: info
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - '8080:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  db-data:

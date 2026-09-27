@@ -1,0 +1,3 @@
+# Store text files with LF line endings, even when committed from Windows.
+# Shell scripts and config files copied into Linux containers break with CRLF.
+* text=auto eol=lf
