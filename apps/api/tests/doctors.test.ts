@@ -44,7 +44,11 @@ describe('GET /api/doctors/:id/slots', () => {
     const res = await request(app).get(`/api/doctors/${doctor.id}/slots`);
 
     expect(res.status).toBe(200);
-    expect(res.body.doctor).toEqual({ id: doctor.id, name: 'Dr. Test', specialty: 'General Practice' });
+    expect(res.body.doctor).toEqual({
+      id: doctor.id,
+      name: 'Dr. Test',
+      specialty: 'General Practice',
+    });
     expect(res.body.slots.map((slot: { id: string }) => slot.id)).toEqual([
       freeSlot.id,
       reopenedSlot.id,
